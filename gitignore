@@ -1,0 +1,10 @@
+#files
+push
+.gitignore
+Makefile
+main.c
+# Object files
+*.o
+*.out
+*.swp
+
