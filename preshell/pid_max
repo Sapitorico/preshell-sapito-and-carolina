@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "El valor máximo que puede tener un ID de proceso es "
+cat /proc/sys/kernel/pid_max
