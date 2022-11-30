@@ -5,13 +5,13 @@
 
 int main(void)
 {
-	char *path;
+	char *path, *p;
 	DIR *dp;
 	struct dirent *dirp;
 
 	path = getenv("PATH");
 	printf("PATH: %s\n", path);
-	char *p = strtok(path, ":");
+	p = strtok(path, ":");
 	while (p)
 	{
 		if ((dp = opendir(p)) == NULL)

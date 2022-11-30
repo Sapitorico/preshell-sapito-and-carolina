@@ -19,7 +19,6 @@ int main(void)
 		free(command);
 		free(line);
 	}
-	free(command);
 	free(line);
 	exit(EXIT_SUCCESS);
 }
@@ -31,7 +30,6 @@ char *read_line(void)
 	if (getline(&buffer, &size, stdin) == -1)
 	{
 		perror("Bad arguments");
-		free(buffer);
 		exit(EXIT_SUCCESS);
 	}
 	return (buffer);
@@ -46,6 +44,7 @@ char **divide_line(char *line)
 	if (!tokens)
 	{
 		perror("Error");
+		free(line);
 		exit(EXIT_FAILURE);
 	}
 	token = strtok(line, " \n");
@@ -78,6 +77,7 @@ int run_command(char **command)
 		if (execve(command[0], command, NULL) == -1)
 		{
 			perror("./shell");
+			free(command);
 			exit(EXIT_FAILURE);
 		}
 	}

@@ -1,7 +1,10 @@
 CC= gcc	#compiler
+VAL= valgrind 
 RM=rm -f	#remove files
 SRC= *.c	#files to be compiled
 NAME= hsh	#executable name
+VALFULL= --leak-check=full
+VALALL= --show-leak-kinds=all
 CFLAGS= -Wall -Werror -Wextra -pedantic -std=gnu89 	#compiler flags
 compil:	#compilation 
 	$(CC) $(CFLAGS) $(SRC) -g -o $(NAME)
@@ -9,8 +12,10 @@ clean:	#delete the executable file
 	$(RM) $(NAME)
 run: $(NAME)	#run the executable
 	./$(NAME)
-val: $(NAME)
-	valgrind --leak-check=full ./$(NAME)
+full: $(NAME)
+	$(VAL) $(VALFULL) -s ./$(NAME)
+all: $(NAME)
+	$(VAL) $(VALALL) -s ./$(NAME)
 re: clean all	#recompile
-mem: compil val
-all: compil run	#compile and run
+mem1: compil full
+mem2: compil all
