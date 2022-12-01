@@ -8,5 +8,6 @@
 char *read_line(void);
 int run_command(char **command);
 char **divide_line(char *line);
+char **divide_path(void);
 char **_path(char **command);
 #endif

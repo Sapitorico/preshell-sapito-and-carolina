@@ -1,19 +1,21 @@
 #include "main.h"
 #include "functions.h"
-extern char **environ;
 /**
  */
 int main(void)
 {
-	char *line = NULL, **tokens = NULL, **command = NULL;
+	char *line = NULL, **command = NULL;
 	int status = 1;
 
 	while (status)
 	{
 		printf(PID);
 		line = read_line();
-		tokens = divide_line(line);
-		command = _path(tokens);
+		if (!line)
+			continue;
+		command = divide_line(line);
+		if (!command)
+			continue;
 		status = run_command(command);
 		free(line);
 	}
@@ -24,16 +26,23 @@ char *read_line(void)
 {
 	char *buffer = NULL;
 	size_t size = 1024;
+	ssize_t characters = 0;
 
-	if (getline(&buffer, &size, stdin) == -1)
+	characters = getline(&buffer, &size, stdin);
+	if (characters == EOF || !_strcmp(buffer, "\n"))
+	{
+		if (isatty(STDIN_FILENO))
+			write(STDOUT_FILENO, "\n", 1);
+		free(buffer);
 		exit(EXIT_SUCCESS);
+	}
 	return (buffer);
 }
 char **divide_line(char *line)
 {
 	char *token = NULL, **tokens = NULL;
 	int i = 0;
-	ssize_t len = _strlen(line);
+	ssize_t len = 64;
 
 	tokens = malloc(len * sizeof(char *));
 	if (!tokens)
@@ -41,16 +50,17 @@ char **divide_line(char *line)
 		for (; i < len; i++)
 			free(tokens[i]);
 		free(tokens);
-		perror("malloc failed");
+		perror("Error: allocation error");
 		exit(EXIT_FAILURE);
 	}
 	token = strtok(line, " \n");
 	while (token)
 	{
 		tokens[i] = token;
+		i++;
 		if (i >= len)
 		{
-			len += len;
+			len += 64;
 			tokens = realloc(tokens, len * sizeof(char *));
 			if (!token)
 			{
@@ -58,11 +68,10 @@ char **divide_line(char *line)
 					free(tokens[i]);
 				free(tokens);
 				free(line);
-				perror("Error");
+				perror("Error: allocation error");
 				exit(EXIT_FAILURE);
 			}
 		}
-		i++;
 		token = strtok(NULL, " \n");
 	}
 	tokens[i] = NULL;
@@ -72,13 +81,17 @@ int run_command(char **command)
 {
 	int i = 0;
 	int len = _strlen(*command);
-	pid_t pid = fork();
+	pid_t pid;
 	int status;
 
+	if (!command[0])
+		return (-1);
 	if (!_strcmp(command[0], "exit"))
 	{
 		return (0);
 	}
+	command = _path(command);
+	pid = fork();
 	if (!pid)
 	{
 		if (execve(command[0], command, NULL) == -1)
@@ -95,7 +108,7 @@ int run_command(char **command)
 	else
 		perror("Error");
 	free(command);
-	return (1);
+	return (status);
 }
 char *_getenv(const char *name)
 {
@@ -111,33 +124,51 @@ char *_getenv(const char *name)
 	}
 	return (NULL);
 }
-char **_path(char **command)
+char **divide_path(void)
 {
 	char *path = _getenv("PATH");
-	char **dirs = NULL, *token = NULL;
-	int i = 0, j = 0;
-	ssize_t len = _strlen(path);
-	struct stat sb;
+	char *token_path = NULL, **new_path = NULL;
+	int i = 0;
 
-	dirs = malloc(len * sizeof(char *));
-	token = strtok(path, ":");
-	while (token)
+	token_path = strtok(path, ":");
+	new_path = malloc(sizeof(char *) * _strlen(token_path) + 1);
+	if (!new_path)
+		return (NULL);
+	while (token_path)
 	{
-		printf("%s\n", token);
-		dirs[i] = token;
-		token = strtok(NULL, " ");
+		new_path[i] = token_path;
+		token_path = strtok(NULL, ":");
 	}
-	dirs[i] = NULL;
-	while (dirs[j])
+	new_path[i] = NULL;
+	return (new_path);
+}
+char **_path(char **command)
+{
+	char **path = divide_path();
+	char *command_cpy = NULL, *str_path = NULL;
+	int i = 0;
+	struct stat st;
+
+	while (path[i])
 	{
-		chdir(dirs[j]);
-		if (!stat(command[0], &sb))
+		command_cpy = command[0];
+		str_path = malloc(_strlen(path[i]) + _strlen(command_cpy) + 2);
+		if (!str_path)
 		{
-			command[0] = strcat(dirs[i], command[0]);
-			break;
+			perror("Error: allocation error");
+			return (NULL);
 		}
-		j++;
+		_strcpy(str_path, path[i]);
+		_strcat(str_path, "/");
+		_strcat(str_path, command_cpy);
+		if (!stat(str_path, &st))
+		{
+			command[0] = str_path;
+			free(command_cpy);
+			return (command);
+
+		}
+		i++;
 	}
-	printf("%s\n", command[0]);
 	return (command);
 }
