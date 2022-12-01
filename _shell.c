@@ -25,20 +25,17 @@ int main(void)
 char *read_line(void)
 {
 	char *buffer = NULL;
-	size_t size = 0;
+	size_t size = 1024;
 	ssize_t characters = 0;
 
 	characters = getline(&buffer, &size, stdin);
-	if (characters == EOF)
+	if (characters == EOF || !_strcmp(buffer, "\n"))
 	{
 		if (isatty(STDIN_FILENO))
 			write(STDOUT_FILENO, "\n", 1);
 		free(buffer);
 		exit(EXIT_SUCCESS);
 	}
-	if (!_strcmp(buffer, "\n"))
-		printf("\n");
-
 	return (buffer);
 }
 char **divide_line(char *line)
@@ -93,10 +90,10 @@ int run_command(char **command)
 	{
 		return (0);
 	}
+	command = _path(command);
 	pid = fork();
 	if (!pid)
 	{
-/**		command = _path(command);**/
 		if (execve(command[0], command, NULL) == -1)
 		{
 			for (; i < len; i++)
@@ -113,21 +110,33 @@ int run_command(char **command)
 	free(command);
 	return (status);
 }
-/**
+char *_getenv(const char *name)
+{
+	extern char **environ;
+	char *env_var = NULL;
+	int i = 0;
+
+	for (; environ[i] != NULL; i++)
+	{
+		env_var = strtok(environ[i], "=");
+		if (!strcmp(env_var, name))
+			return (strtok(NULL, "="));
+	}
+	return (NULL);
+}
 char **divide_path(void)
 {
-	char *path = getenv("PATH");
+	char *path = _getenv("PATH");
 	char *token_path = NULL, **new_path = NULL;
 	int i = 0;
 
+	token_path = strtok(path, ":");
 	new_path = malloc(sizeof(char *) * _strlen(token_path) + 1);
 	if (!new_path)
 		return (NULL);
-	token_path = strtok(path, ":");
 	while (token_path)
 	{
 		new_path[i] = token_path;
-		i++;
 		token_path = strtok(NULL, ":");
 	}
 	new_path[i] = NULL;
@@ -150,8 +159,8 @@ char **_path(char **command)
 			return (NULL);
 		}
 		_strcpy(str_path, path[i]);
+		_strcat(str_path, "/");
 		_strcat(str_path, command_cpy);
-		_strcat(str_path, "\0");
 		if (!stat(str_path, &st))
 		{
 			command[0] = str_path;
@@ -162,4 +171,4 @@ char **_path(char **command)
 		i++;
 	}
 	return (command);
-}**/
+}
