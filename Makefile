@@ -15,7 +15,7 @@ run: $(NAME)	#run the executable
 full: $(NAME)
 	$(VAL) $(VALFULL) -s ./$(NAME)
 all: $(NAME)
-	$(VAL) $(VALALL) -s ./$(NAME)
+	$(VAL) $(VALALL) $(VALFULL) -s ./$(NAME)
 re: clean all	#recompile
-mem1: compil full
-mem2: compil all
+mem1: compil all
+mem2: compil full
